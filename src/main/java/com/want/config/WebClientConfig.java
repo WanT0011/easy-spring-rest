@@ -4,6 +4,7 @@ import lombok.Getter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author WangZhiJian
@@ -13,5 +14,5 @@ import java.util.Map;
 @ConfigurationProperties("com.want.web")
 public class WebClientConfig {
 
-    private Map<String,WebClientCustomProperties> clientConig;
+    private Map<String,WebClientCustomProperties> clientConfig = new ConcurrentHashMap<>(0);
 }

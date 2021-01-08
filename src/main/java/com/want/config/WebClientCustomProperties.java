@@ -44,5 +44,5 @@ public class WebClientCustomProperties {
     // 最大存活时间
     private int maxLifeTime = 4 * 60 * 60;
     // enableMetrics
-    private Boolean enableMetrics = true;
+    private Boolean enableMetrics = false;
 }
