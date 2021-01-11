@@ -2,7 +2,6 @@ package com.want.factory;
 
 import com.want.config.WebClientConfig;
 import com.want.config.WebClientCustomProperties;
-import io.netty.channel.ChannelOption;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
@@ -10,22 +9,26 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
-
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 
 import javax.annotation.Resource;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.want.constant.EasySpringRestClientConstant.DEFAULT_CLIENT_NAME;
-
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.springframework.web.reactive.function.client.ExchangeFilterFunctions.basicAuthentication;
 
 /**
  * @author want
@@ -61,13 +64,16 @@ public class EasyWebClientFactory implements SmartInitializingSingleton, Applica
                                         log.info("构建【{}】webClient开始",entry.getKey());
                                         WebClientCustomProperties properties = entry.getValue();
                                         String baseUrl = Optional.ofNullable(properties.getBaseUrl()).orElse(properties.getDefaultUriVariables());
-                                        ClientHttpConnector reactorClientHttpConnector;
+                                        ReactorClientHttpConnector reactorClientHttpConnector;
                                         if(!properties.getUseGlobalResources()){
                                             reactorClientHttpConnector = Optional.ofNullable(properties.getReactorResourceFactoryBeanName())
-                                                    .map(beanName -> applicationContext.getBean(beanName, ClientHttpConnector.class))
+                                                    .map(beanName -> applicationContext.getBean(beanName, ReactorClientHttpConnector.class))
                                                     .orElse(null);
                                         }else {
-                                            reactorClientHttpConnector = new ReactorClientHttpConnector();
+                                            HttpClient httpClient = HttpClient.create(ConnectionProvider
+                                                    .fixed(entry.getKey(),properties.getMaxConnection()
+                                                            ,properties.getDefaultRequestTimeOut(),Duration.of(properties.getMaxIdleTime(), SECONDS)));
+                                            reactorClientHttpConnector = new ReactorClientHttpConnector(httpClient);
                                         }
                                         WebClient.Builder builder = WebClient.builder()
                                                 .defaultCookies(cookieList ->
@@ -78,11 +84,15 @@ public class EasyWebClientFactory implements SmartInitializingSingleton, Applica
                                                                 .map(Map::entrySet).ifPresent(entryList -> entryList.forEach(cookie -> headList.add(cookie.getKey(), cookie.getValue()))))
                                                 .filters(filterList -> Optional.ofNullable(properties.getFilterNames())
                                                         .ifPresent(filterNames -> filterNames.stream().map(name -> applicationContext.getBean(name, ExchangeFilterFunction.class)).forEach(filterList::add)))
-                                                //.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(properties.getMaxInMemorySize()))
+//                                                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(properties.getMaxInMemorySize()))
                                                 .clientConnector(reactorClientHttpConnector);
                                         if(StringUtils.hasText(baseUrl)){
                                             builder.baseUrl(baseUrl);
                                         }
+                                        Optional.ofNullable(properties.getAuthenticationKey())
+                                                .ifPresent(key1 ->
+                                                        Optional.ofNullable(properties.getAuthenticationValue()).ifPresent(value -> builder.filter(basicAuthentication(key1,value))));
+
                                         log.info("构建【{}】webClient成功",entry.getKey());
                                         clientCacheMap.putIfAbsent(entry.getKey(),builder.build());
                                     });

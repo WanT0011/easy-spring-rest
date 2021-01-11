@@ -21,6 +21,8 @@ public class WebClientCustomProperties {
     private Map<String,String> cookies;
     // 针对每个请求的客户端过滤器 bean 名称
     private List<String> filterNames;
+    private String authenticationKey;
+    private String authenticationValue;
     //
     private String exchangeStrategies;
     // 参与持有的全局Reactor Netty资源包括事件循环线程和连接池。这是推荐的模式，
