@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.want.constant.EasySpringRestClientConstant.DEFAULT_CLIENT_NAME;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.springframework.web.reactive.function.client.ExchangeFilterFunctions.basicAuthentication;
 
 /**
  * @author want
@@ -69,13 +70,9 @@ public class EasyWebClientFactory implements SmartInitializingSingleton, Applica
                                                     .map(beanName -> applicationContext.getBean(beanName, ReactorClientHttpConnector.class))
                                                     .orElse(null);
                                         }else {
-                                            HttpClient httpClient = HttpClient.create(ConnectionProvider.builder(entry.getKey())
-                                                    .pendingAcquireTimeout(Duration.of(properties.getDefaultRequestTimeOut(), SECONDS))
-                                                    .maxConnections(properties.getMaxConnection())
-                                                    .maxIdleTime(Duration.of(properties.getMaxIdleTime(), SECONDS))
-                                                    .maxLifeTime(Duration.of(properties.getMaxLifeTime(), SECONDS))
-                                                    .metrics(properties.getEnableMetrics())
-                                                    .build());
+                                            HttpClient httpClient = HttpClient.create(ConnectionProvider
+                                                    .fixed(entry.getKey(),properties.getMaxConnection()
+                                                            ,properties.getDefaultRequestTimeOut(),Duration.of(properties.getMaxIdleTime(), SECONDS)));
                                             reactorClientHttpConnector = new ReactorClientHttpConnector(httpClient);
                                         }
                                         WebClient.Builder builder = WebClient.builder()
@@ -87,11 +84,15 @@ public class EasyWebClientFactory implements SmartInitializingSingleton, Applica
                                                                 .map(Map::entrySet).ifPresent(entryList -> entryList.forEach(cookie -> headList.add(cookie.getKey(), cookie.getValue()))))
                                                 .filters(filterList -> Optional.ofNullable(properties.getFilterNames())
                                                         .ifPresent(filterNames -> filterNames.stream().map(name -> applicationContext.getBean(name, ExchangeFilterFunction.class)).forEach(filterList::add)))
-                                                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(properties.getMaxInMemorySize()))
+//                                                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(properties.getMaxInMemorySize()))
                                                 .clientConnector(reactorClientHttpConnector);
                                         if(StringUtils.hasText(baseUrl)){
                                             builder.baseUrl(baseUrl);
                                         }
+                                        Optional.ofNullable(properties.getAuthenticationKey())
+                                                .ifPresent(key1 ->
+                                                        Optional.ofNullable(properties.getAuthenticationValue()).ifPresent(value -> builder.filter(basicAuthentication(key1,value))));
+
                                         log.info("构建【{}】webClient成功",entry.getKey());
                                         clientCacheMap.putIfAbsent(entry.getKey(),builder.build());
                                     });
