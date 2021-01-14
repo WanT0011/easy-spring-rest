@@ -2,23 +2,24 @@ package com.want.request.client;
 
 import com.want.request.interceptor.EasySpringRestRequestExecutor;
 import com.want.request.interceptor.EasySpringRestSendRequestExecutorFilter;
-import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserter;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.ClientRequest;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import javax.swing.text.html.Option;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -27,43 +28,43 @@ import java.util.function.Consumer;
  */
 public class EasySpringRestClient {
 
-    private WebClient webClient;
+    private final WebClient webClient;
 
     private EasySpringRestRequestExecutor easySpringRestRequestExecutor;
-
-    public EasySpringRestClient(EasySpringRestRequestExecutor easySpringRestRequestExecutor) {
-        this.easySpringRestRequestExecutor = easySpringRestRequestExecutor;
-    }
 
     public EasySpringRestClient(WebClient webClient, EasySpringRestRequestExecutor easySpringRestRequestExecutor) {
         this.webClient = webClient;
         this.easySpringRestRequestExecutor = easySpringRestRequestExecutor;
     }
 
-    public Mono<ClientResponse> exchange(String uri, HttpMethod httpMethod
+    public <T> WebClient.ResponseSpec post(String uri
+            , T body, Class<T> clazz) {
+        return exchange(uri,HttpMethod.POST,null,null
+                ,BodyInserters.fromPublisher(Mono.just(body), clazz),null);
+    }
+
+    @SneakyThrows
+    public WebClient.ResponseSpec exchange(String uri, HttpMethod httpMethod
             , Consumer<Map<String, Object>> attConsumer
             , Consumer<MultiValueMap<String, String>> cookieConsumer
             , BodyInserter<?, ? super ClientHttpRequest> body
-            ,Consumer<HttpHeaders> headersConsumer
-            , Boolean block) throws URISyntaxException {
-        ClientRequest req = ClientRequest.method(httpMethod, new URI(uri))
-                .attributes(attConsumer)
-                .cookies(cookieConsumer)
-                .headers(headersConsumer)
-                .body(body)
-                .build();
+            , Consumer<HttpHeaders> headersConsumer) {
+
+        ClientRequest.Builder clientBuilder = ClientRequest.method(httpMethod, new URI(uri));
+        Optional.ofNullable(attConsumer).ifPresent(clientBuilder::attributes);
+        Optional.ofNullable(cookieConsumer).ifPresent(clientBuilder::cookies);
+        Optional.ofNullable(body).ifPresent(clientBuilder::body);
+        Optional.ofNullable(headersConsumer).ifPresent(clientBuilder::headers);
+
+        ClientRequest req = clientBuilder.build();
 
         return easySpringRestRequestExecutor.exec(req);
     }
 
+    public void addFilterFirst(EasySpringRestSendRequestExecutorFilter filter){
+        this.easySpringRestRequestExecutor = filter.apply(this.easySpringRestRequestExecutor);
+    }
 
-//    public void addInterceptorLast(EasySpringRestRequestExecutor easySpringRestRequestInterceptor){
-//        interceptors.add(easySpringRestRequestInterceptor);
-//    }
-//    public void addInterceptor(int index, EasySpringRestRequestExecutor easySpringRestRequestInterceptor){
-//        Assert.isTrue(index < interceptors.size(),"设置拦截器的下标越界！");
-//        interceptors.add(index,easySpringRestRequestInterceptor);
-//    }
 
 
     public ClientRequest builderRequest(String uri, HttpMethod httpMethod) throws URISyntaxException {
@@ -104,7 +105,7 @@ public class EasySpringRestClient {
 
 
         public EasySpringRestRequestExecutor initEasySpringRestRequestExecutor(){
-            WebClient webClient = Optional.ofNullable(this.webClient)
+            WebClient finalWebClient = Optional.ofNullable(this.webClient)
                     .orElseGet(() -> {
                         ReactorClientHttpConnector reactorClientHttpConnector = new ReactorClientHttpConnector();
                         return WebClient.builder()
@@ -112,7 +113,7 @@ public class EasySpringRestClient {
                                 .build();
                     });
             return req ->
-                webClient.method(req.method())
+                    finalWebClient.method(req.method())
                         .headers(httpHeaders -> {
                             Optional.ofNullable(req.headers())
                                     .map(HttpHeaders::entrySet)
@@ -128,7 +129,7 @@ public class EasySpringRestClient {
                             Optional.ofNullable(req.cookies())
                                     .map(Map::entrySet)
                                     .ifPresent(entries -> entries.forEach(entry -> cookies.addAll(entry.getKey(),entry.getValue())));
-                        }).exchange();
+                        }).retrieve();
         }
     }
 

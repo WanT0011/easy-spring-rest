@@ -1,44 +1,44 @@
 package com.want;
 
 import com.want.annotation.WantLoadBalance;
-//import com.want.factory.EasyWebClientFactory;
 import com.want.request.client.EasySpringRestClient;
-import com.want.request.interceptor.EasySpringRestSendRequestExecutorFilter;
+import com.want.request.interceptor.filter.LoadBalanceExecutorFilter;
+import com.want.request.interceptor.filter.impl.RoundLoadBalanceFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
-import org.springframework.context.annotation.Import;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.context.annotation.Bean;
 
-import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
+
 
 /**
  * @author WangZhiJian
  * @since 2021/1/8
  */
 @Slf4j
-//@Import(EasyWebClientFactory.class)
+@EnableDiscoveryClient
 public class EasySpringRestAutoConfiguration{
 
     @Autowired(required = false)
     @WantLoadBalance
-    private List<EasySpringRestClient> loadBalanceWebClient = Collections.emptyList();
+    private List<EasySpringRestClient> loadBalanceWebClientList = Collections.emptyList();
 
 
-    @Resource
-    private DiscoveryClient discoverClient;
+    @ConditionalOnMissingBean(LoadBalanceExecutorFilter.class)
+    public LoadBalanceExecutorFilter loadBalanceExecutorFilter(DiscoveryClient discoveryClient){
+        return new RoundLoadBalanceFilter(discoveryClient);
+    }
 
-
-//    @ConditionalOnMissingBean(EasySpringRestSendRequestExecutorFilter.class)
-//    public SmartInitializingSingleton initEasySpringRestSendRequestInterceptor(){
-//        return () -> {
-//            loadBalanceWebClient.forEach(
-//                    client -> client.
-//            );
-//        }
-//    }
+    @Bean
+    public SmartInitializingSingleton easySpringRestClientInitializer(LoadBalanceExecutorFilter loadBalanceExecutorFilter){
+        return () ->
+            loadBalanceWebClientList.forEach(loadBalanceWebClient
+                    -> loadBalanceWebClient.addFilterFirst(loadBalanceExecutorFilter));
+    }
 
 }
