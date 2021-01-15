@@ -1,42 +1,51 @@
 package com.want;
 
-import com.want.config.WebClientConfig;
-import com.want.config.WebClientCustomProperties;
-import com.want.factory.EasyWebClientFactory;
+import com.want.annotation.WantLoadBalance;
+import com.want.request.client.EasySpringRestClient;
+import com.want.request.interceptor.filter.LoadBalanceExecutorFilter;
+import com.want.request.interceptor.filter.impl.RoundLoadBalanceFilter;
+import com.want.request.loadbalance.EasySpringRestLoadBalance;
+import com.want.request.loadbalance.EasySpringRestRoundLoadBalance;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanInitializationException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.util.CollectionUtils;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.netty.http.client.HttpClient;
-import reactor.netty.resources.ConnectionProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.context.annotation.Bean;
 
-import javax.annotation.Resource;
-import java.time.Duration;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.List;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 /**
  * @author WangZhiJian
  * @since 2021/1/8
  */
 @Slf4j
-//@ConditionalOnProperty("com.want.web")
-@Import(EasyWebClientFactory.class)
-@EnableConfigurationProperties(WebClientConfig.class)
+@EnableDiscoveryClient
 public class EasySpringRestAutoConfiguration{
+
+    @Autowired(required = false)
+    @WantLoadBalance
+    private List<EasySpringRestClient> loadBalanceWebClientList = Collections.emptyList();
+
+    @Bean
+    @ConditionalOnMissingBean(EasySpringRestLoadBalance.class)
+    public EasySpringRestLoadBalance easySpringRestLoadBalance(){
+        return new EasySpringRestRoundLoadBalance();
+    }
+    @Bean
+    @ConditionalOnMissingBean(LoadBalanceExecutorFilter.class)
+    public LoadBalanceExecutorFilter loadBalanceExecutorFilter(DiscoveryClient discoveryClient,EasySpringRestLoadBalance easySpringRestLoadBalance){
+        return new RoundLoadBalanceFilter(discoveryClient,easySpringRestLoadBalance);
+    }
+
+    @Bean
+    public SmartInitializingSingleton easySpringRestClientInitializer(LoadBalanceExecutorFilter loadBalanceExecutorFilter){
+        return () ->
+            loadBalanceWebClientList.forEach(loadBalanceWebClient
+                    -> loadBalanceWebClient.addFilterFirst(loadBalanceExecutorFilter));
+    }
+
 }
