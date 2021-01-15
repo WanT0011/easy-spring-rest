@@ -30,12 +30,12 @@ public class EasySpringRestAutoConfiguration{
     @WantLoadBalance
     private List<EasySpringRestClient> loadBalanceWebClientList = Collections.emptyList();
 
-
+    @Bean
     @ConditionalOnMissingBean(EasySpringRestLoadBalance.class)
     public EasySpringRestLoadBalance easySpringRestLoadBalance(){
         return new EasySpringRestRoundLoadBalance();
     }
-
+    @Bean
     @ConditionalOnMissingBean(LoadBalanceExecutorFilter.class)
     public LoadBalanceExecutorFilter loadBalanceExecutorFilter(DiscoveryClient discoveryClient,EasySpringRestLoadBalance easySpringRestLoadBalance){
         return new RoundLoadBalanceFilter(discoveryClient,easySpringRestLoadBalance);
