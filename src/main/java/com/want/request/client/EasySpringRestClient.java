@@ -115,22 +115,20 @@ public class EasySpringRestClient {
             return req ->
                     finalWebClient.method(req.method())
                         .uri(req.url())
-                        .headers(httpHeaders -> {
+                        .headers(httpHeaders ->
                             Optional.ofNullable(req.headers())
                                     .map(HttpHeaders::entrySet)
-                                    .ifPresent(entries -> entries.forEach(entry -> httpHeaders.addAll(entry.getKey(),entry.getValue())));
-                        })
-                        .attributes(attMap -> {
-                            Optional.ofNullable(req.attributes())
+                                    .ifPresent(entries -> entries.forEach(entry -> httpHeaders.addAll(entry.getKey(),entry.getValue()))))
+                        .attributes(attMap ->
+                                Optional.ofNullable(req.attributes())
                                     .map(Map::entrySet)
-                                    .ifPresent(entries -> entries.forEach(entry -> attMap.put(entry.getKey(),entry.getValue())));
-                        })
+                                    .ifPresent(entries -> entries.forEach(entry -> attMap.put(entry.getKey(),entry.getValue()))))
                         .body(req.body())
-                        .cookies(cookies -> {
-                            Optional.ofNullable(req.cookies())
+                        .cookies(cookies ->
+                                Optional.ofNullable(req.cookies())
                                     .map(Map::entrySet)
-                                    .ifPresent(entries -> entries.forEach(entry -> cookies.addAll(entry.getKey(),entry.getValue())));
-                        }).retrieve();
+                                    .ifPresent(entries -> entries.forEach(entry -> cookies.addAll(entry.getKey(),entry.getValue()))))
+                        .retrieve();
         }
     }
 
