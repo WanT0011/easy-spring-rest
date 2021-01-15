@@ -114,6 +114,7 @@ public class EasySpringRestClient {
                     });
             return req ->
                     finalWebClient.method(req.method())
+                        .uri(req.url())
                         .headers(httpHeaders -> {
                             Optional.ofNullable(req.headers())
                                     .map(HttpHeaders::entrySet)
