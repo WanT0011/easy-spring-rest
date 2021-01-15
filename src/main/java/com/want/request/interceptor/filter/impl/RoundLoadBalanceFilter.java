@@ -11,21 +11,25 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * TODO 负载均衡策略是由内部的{@link EasySpringRestLoadBalance}去做实现的，和本身无关，所以可否做个通用的
+ * 轮询的负载均衡拦截器负载均衡
+ *
  * @author WangZhiJian
  * @since 2021/1/14
  */
 @Slf4j
 public class RoundLoadBalanceFilter extends AbstractLoadBalanceExecutorFilter {
-
+    /**
+     * 服务发现客户端
+     */
     private DiscoveryClient discoveryClient;
-
+    /**
+     * 负载均衡策略
+     */
     private EasySpringRestLoadBalance easySpringRestLoadBalance;
 
-
-    private AtomicInteger curCount = new AtomicInteger(0);
 
     public RoundLoadBalanceFilter(DiscoveryClient discoveryClient,EasySpringRestLoadBalance easySpringRestLoadBalance) {
         this.discoveryClient = discoveryClient;

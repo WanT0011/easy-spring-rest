@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import org.springframework.web.reactive.function.client.ClientRequest;
 
 /**
+ * 请求的uri为空的异常
+ *
  * @author WangZhiJian
  * @since 2021/1/14
  */

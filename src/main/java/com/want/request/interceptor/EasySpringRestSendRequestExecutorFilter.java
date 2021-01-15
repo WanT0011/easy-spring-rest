@@ -12,9 +12,19 @@ import org.springframework.web.reactive.function.client.WebClient;
  */
 @FunctionalInterface
 public interface EasySpringRestSendRequestExecutorFilter {
-
+    /**
+     * 对请求进行拦截处理，之后交由后续的执行器做执行
+     * @param request
+     * @param next
+     * @return
+     */
     WebClient.ResponseSpec filter(ClientRequest request, EasySpringRestRequestExecutor next);
 
+    /**
+     * 在本拦截器后插入一个拦截器
+     * @param after 要插入的拦截器
+     * @return
+     */
     default EasySpringRestSendRequestExecutorFilter andThen(EasySpringRestSendRequestExecutorFilter after){
         Assert.notNull(after, "'after filter' must not be null");
         return (req,next) ->{
@@ -23,6 +33,11 @@ public interface EasySpringRestSendRequestExecutorFilter {
         };
     }
 
+    /**
+     * 将本拦截器放在执行器前方，并合成一个执行器
+     * @param executor
+     * @return
+     */
     default EasySpringRestRequestExecutor apply(EasySpringRestRequestExecutor executor){
         Assert.notNull(executor, "'executor' must not be null");
         return req -> this.filter(req,executor);

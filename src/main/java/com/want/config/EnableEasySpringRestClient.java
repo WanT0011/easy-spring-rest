@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Import;
 import java.lang.annotation.*;
 
 /**
+ * 启用EasySpringRest的注解
+ *
  * @author want
  * @createTime 2021.01.11.21:29
  */
