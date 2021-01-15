@@ -4,6 +4,8 @@ import com.want.annotation.WantLoadBalance;
 import com.want.request.client.EasySpringRestClient;
 import com.want.request.interceptor.filter.LoadBalanceExecutorFilter;
 import com.want.request.interceptor.filter.impl.RoundLoadBalanceFilter;
+import com.want.request.loadbalance.EasySpringRestLoadBalance;
+import com.want.request.loadbalance.EasySpringRestRoundLoadBalance;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +31,14 @@ public class EasySpringRestAutoConfiguration{
     private List<EasySpringRestClient> loadBalanceWebClientList = Collections.emptyList();
 
 
+    @ConditionalOnMissingBean(EasySpringRestLoadBalance.class)
+    public EasySpringRestLoadBalance easySpringRestLoadBalance(){
+        return new EasySpringRestRoundLoadBalance();
+    }
+
     @ConditionalOnMissingBean(LoadBalanceExecutorFilter.class)
-    public LoadBalanceExecutorFilter loadBalanceExecutorFilter(DiscoveryClient discoveryClient){
-        return new RoundLoadBalanceFilter(discoveryClient);
+    public LoadBalanceExecutorFilter loadBalanceExecutorFilter(DiscoveryClient discoveryClient,EasySpringRestLoadBalance easySpringRestLoadBalance){
+        return new RoundLoadBalanceFilter(discoveryClient,easySpringRestLoadBalance);
     }
 
     @Bean
