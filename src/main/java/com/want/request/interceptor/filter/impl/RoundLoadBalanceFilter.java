@@ -2,6 +2,7 @@ package com.want.request.interceptor.filter.impl;
 
 import com.want.request.interceptor.filter.AbstractLoadBalanceExecutorFilter;
 import com.want.request.loadbalance.EasySpringRestLoadBalance;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.util.CollectionUtils;
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author WangZhiJian
  * @since 2021/1/14
  */
+@Slf4j
 public class RoundLoadBalanceFilter extends AbstractLoadBalanceExecutorFilter {
 
     private DiscoveryClient discoveryClient;
@@ -50,8 +52,9 @@ public class RoundLoadBalanceFilter extends AbstractLoadBalanceExecutorFilter {
 //            instance = serviceInstances[curIndex%serviceInstances.length];
 //        }
         String oldPath = uri.toString();
-        String suffix = oldPath.substring(0, oldPath.indexOf(host) + host.length());
+        String suffix = oldPath.substring(oldPath.indexOf(host) + host.length());
         try {
+            log.info("Round load balance select uri is {}",instance.getUri()+suffix);
             return new URI(instance.getUri()+suffix);
         } catch (URISyntaxException e) {
             throw new RuntimeException(String.format("构造{}URI失败！",instance.getUri()+suffix),e);
