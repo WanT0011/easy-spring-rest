@@ -6,54 +6,18 @@
 
     <groupId>com.want</groupId>
     <artifactId>easy-spring-rest</artifactId>
+    <packaging>pom</packaging>
     <version>2.3.2.RELEASE</version>
+    <modules>
+        <module>easy-spring-rest-examples</module>
+        <module>spring-boot-start-easy-spring-rest</module>
+    </modules>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.0.0.RELEASE</version>
+        <version>2.3.2.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-
-    <properties>
-        <java.version>1.8</java.version>
-        <springcloud.version>Hoxton.SR8</springcloud.version>
-        <fastjson.version>1.2.75</fastjson.version>
-        <spring-cloud-commons>2.2.5.RELEASE</spring-cloud-commons>
-    </properties>
-    
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-commons</artifactId>
-            <version>${spring-cloud-commons}</version>
-            <optional>true</optional>
-        </dependency>
-        <!-- fastjson -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>${fastjson.version}</version>
-        </dependency>
-    </dependencies>
 
 </project>

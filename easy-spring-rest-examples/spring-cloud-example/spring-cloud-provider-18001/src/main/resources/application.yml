@@ -1,0 +1,14 @@
+server:
+  port: 18001
+spring:
+  application:
+    name: cloud-provider
+eureka:
+  client:
+    register-with-eureka: true
+    fetchRegistry: true
+    service-url:
+      defaultZone: http://localhost:18000/eureka/
+  instance:
+    instance-id: ${spring.application.name}:${server.port}
+    prefer-ip-address: true
